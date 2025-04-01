@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangul Learning Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #eee;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .hangul-chart {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .hangul-card {
+            padding: 15px;
+            text-align: center;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .hangul-char {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+        .pronunciation {
+            font-style: italic;
+            color: #666;
+        }
+        .audio-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .audio-btn:hover {
+            background-color: #2980b9;
+        }
+        .flashcard {
+            width: 300px;
+            height: 200px;
+            margin: 20px auto;
+            perspective: 1000px;
+        }
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .flashcard-front {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .flashcard-back {
+            background-color: #2ecc71;
+            color: white;
+            transform: rotateY(180deg);
+        }
+        .flashcard-char {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+        .flashcard-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .control-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .again-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .good-btn {
+            background-color: #f39c12;
+            color: white;
+        }
+        .easy-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .practice-container {
+            margin-top: 20px;
+        }
+        .practice-display {
+            font-size: 2rem;
+            text-align: center;
+            margin: 20px 0;
+            min-height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .practice-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .practice-btn {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .difficulty-selector {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .progress-container {
+            margin-top: 30px;
+            background-color: #eee;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #3498db;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Korean Hangul Learning Tool</h1>
+    
+    <div class="tab-container">
+        <div class="tab active" onclick="openTab('chart')">Hangul Chart</div>
+        <div class="tab" onclick="openTab('flashcards')">Flashcards</div>
+        <div class="tab" onclick="openTab('practice')">Reading Practice</div>
+    </div>
+    
+    <div id="chart" class="tab-content active">
+        <h2>Hangul Characters</h2>
+        
+        <h3>Consonants (자음)</h3>
+        <div class="hangul-chart" id="consonants-chart"></div>
+        
+        <h3>Vowels (모음)</h3>
+        <div class="hangul-chart" id="vowels-chart"></div>
+        
+        <h3>Basic Syllables</h3>
+        <div class="hangul-chart" id="syllables-chart"></div>
+    </div>
+    
+    <div id="flashcards" class="tab-content">
+        <h2>Spaced Repetition Flashcards</h2>
+        <p>Click the card to flip it. Rate your recall to schedule the next review.</p>
+        
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+            <div class="flashcard-inner">
+                <div class="flashcard-front">
+                    <div class="flashcard-char" id="flashcard-front-char">ㄱ</div>
+                    <div>Click to flip</div>
+                </div>
+                <div class="flashcard-back">
+                    <div class="flashcard-char" id="flashcard-back-char">g/k</div>
+                    <button class="audio-btn" onclick="playCurrentAudio(event)">Play Sound</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flashcard-controls">
+            <button class="control-btn again-btn" onclick="rateCard(0)">Again</button>
+            <button class="control-btn good-btn" onclick="rateCard(1)">Good</button>
+            <button class="control-btn easy-btn" onclick="rateCard(2)">Easy</button>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+            <div class="progress-text" id="progress-text">0/0 reviewed</div>
+        </div>
+    </div>
+    
+    <div id="practice" class="tab-content">
+        <h2>Reading Practice</h2>
+        <p>Generate random Korean words and sentences to practice reading.</p>
+        
+        <div class="difficulty-selector">
+            <label for="difficulty">Difficulty:</label>
+            <select id="difficulty" onchange="updateDifficulty()">
+                <option value="basic">Basic Characters</option>
+                <option value="words">Simple Words</option>
+                <option value="sentences">Short Sentences</option>
+            </select>
+        </div>
+        
+        <div class="practice-container">
+            <div class="practice-display" id="practice-display">Press "Generate" to start</div>
+            
+            <div class="practice-controls">
+                <button class="practice-btn" onclick="generatePractice()">Generate</button>
+                <button class="practice-btn" onclick="showAnswer()">Show Answer</button>
+                <button class="practice-btn" onclick="playPracticeAudio()">Play Audio</button>
+            </div>
+            
+            <div id="answer" style="text-align: center; margin-top: 20px; display: none;">
+                <h3>Pronunciation/Translation</h3>
+                <div id="answer-text"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Hangul data
+        const hangulData = {
+            consonants: [
+                { char: 'ㄱ', pron: 'g/k', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Ko-%E3%84%B1.oga' },
+                { char: 'ㄴ', pron: 'n', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Ko-%E3%84%B4.oga' },
+                { char: 'ㄷ', pron: 'd/t', audio: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Ko-%E3%84%B7.oga' },
+                { char: 'ㄹ', pron: 'r/l', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Ko-%E3%84%B9.oga' },
+                { char: 'ㅁ', pron: 'm', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Ko-%E3%85%81.oga' },
+                { char: 'ㅂ', pron: 'b/p', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-%E3%85%82.oga' },
+                { char: 'ㅅ', pron: 's', audio: 'https://upload.wikimedia.org/wikipedia/commons/2/2b/Ko-%E3%85%85.oga' },
+                { char: 'ㅇ', pron: 'ng/-', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%85%87.oga' },
+                { char: 'ㅈ', pron: 'j', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Ko-%E3%85%88.oga' },
+                { char: 'ㅊ', pron: 'ch', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Ko-%E3%85%8A.oga' },
+                { char: 'ㅋ', pron: 'k', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Ko-%E3%85%8B.oga' },
+                { char: 'ㅌ', pron: 't', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%8C.oga' },
+                { char: 'ㅍ', pron: 'p', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%8D.oga' },
+                { char: 'ㅎ', pron: 'h', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%8E.oga' },
+                { char: 'ㄲ', pron: 'kk', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-%E3%84%B2.oga' },
+                { char: 'ㄸ', pron: 'tt', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%84%B8.oga' },
+                { char: 'ㅃ', pron: 'pp', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6d/Ko-%E3%85%83.oga' },
+                { char: 'ㅆ', pron: 'ss', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%85%86.oga' },
+                { char: 'ㅉ', pron: 'jj', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%89.oga' }
+            ],
+            vowels: [
+                { char: 'ㅏ', pron: 'a', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Ko-%E3%85%8F.oga' },
+                { char: 'ㅑ', pron: 'ya', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Ko-%E3%85%91.oga' },
+                { char: 'ㅓ', pron: 'eo', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Ko-%E3%85%93.oga' },
+                { char: 'ㅕ', pron: 'yeo', audio: 'https://upload.wikimedia.org/wikipedia/commons/2/2e/Ko-%E3%85%95.oga' },
+                { char: 'ㅗ', pron: 'o', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Ko-%E3%85%97.oga' },
+                { char: 'ㅛ', pron: 'yo', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Ko-%E3%85%9B.oga' },
+                { char: 'ㅜ', pron: 'u', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Ko-%E3%85%9C.oga' },
+                { char: 'ㅠ', pron: 'yu', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Ko-%E3%85%A0.oga' },
+                { char: 'ㅡ', pron: 'eu', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Ko-%E3%85%A1.oga' },
+                { char: 'ㅣ', pron: 'i', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-%E3%85%A3.oga' },
+                { char: 'ㅐ', pron: 'ae', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%90.oga' },
+                { char: 'ㅒ', pron: 'yae', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Ko-%E3%85%92.oga' },
+                { char: 'ㅔ', pron: 'e', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Ko-%E3%85%94.oga' },
+                { char: 'ㅖ', pron: 'ye', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%96.oga' },
+                { char: 'ㅘ', pron: 'wa', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-%E3%85%98.oga' },
+                { char: 'ㅙ', pron: 'wae', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5d/Ko-%E3%85%99.oga' },
+                { char: 'ㅚ', pron: 'oe', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%9A.oga' },
+                { char: 'ㅝ', pron: 'wo', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%9D.oga' },
+                { char: 'ㅞ', pron: 'we', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%9E.oga' },
+                { char: 'ㅟ', pron: 'wi', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Ko-%E3%85%9F.oga' },
+                { char: 'ㅢ', pron: 'ui', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%A2.oga' }
+            ],
+            syllables: [
+                { char: '가', pron: 'ga', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Ko-가.oga' },
+                { char: '나', pron: 'na', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Ko-나.oga' },
+                { char: '다', pron: 'da', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Ko-다.oga' },
+                { char: '라', pron: 'ra', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-라.oga' },
+                { char: '마', pron: 'ma', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-마.oga' },
+                { char: '바', pron: 'ba', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Ko-바.oga' },
+                { char: '사', pron: 'sa', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Ko-사.oga' },
+                { char: '아', pron: 'a', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-아.oga' },
+                { char: '자', pron: 'ja', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Ko-자.oga' },
+                { char: '차', pron: 'cha', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Ko-차.oga' },
+                { char: '카', pron: 'ka', audio: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Ko-카.oga' },
+                { char: '타', pron: 'ta', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-타.oga' },
+                { char: '파', pron: 'pa', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-파.oga' },
+                { char: '하', pron: 'ha', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-하.oga' }
+            ]
+        };
+
+        // Practice data
+        const practiceData = {
+            words: [
+                { korean: "사과", pronunciation: "sa-gwa", meaning: "apple" },
+                { korean: "학교", pronunciation: "hak-gyo", meaning: "school" },
+                { korean: "친구", pronunciation: "chin-gu", meaning: "friend" },
+                { korean: "가방", pronunciation: "ga-bang", meaning: "bag" },
+                { korean: "의자", pronunciation: "ui-ja", meaning: "chair" },
+                { korean: "책상", pronunciation: "chaek-sang", meaning: "desk" },
+                { korean: "컴퓨터", pronunciation: "keom-pyu-teo", meaning: "computer" },
+                { korean: "핸드폰", pronunciation: "haen-deu-pon", meaning: "cell phone" },
+                { korean: "물", pronunciation: "mul", meaning: "water" },
+                { korean: "불", pronunciation: "bul", meaning: "fire" },
+                { korean: "나무", pronunciation: "na-mu", meaning: "tree" },
+                { korean: "꽃", pronunciation: "kkot", meaning: "flower" },
+                { korean: "강아지", pronunciation: "gang-a-ji", meaning: "puppy" },
+                { korean: "고양이", pronunciation: "go-yang-i", meaning: "cat" },
+                { korean: "사람", pronunciation: "sa-ram", meaning: "person" }
+            ],
+            sentences: [
+                { korean: "안녕하세요", pronunciation: "an-nyeong-ha-se-yo", meaning: "Hello" },
+                { korean: "감사합니다", pronunciation: "gam-sa-ham-ni-da", meaning: "Thank you" },
+                { korean: "미안합니다", pronunciation: "mi-an-ham-ni-da", meaning: "I'm sorry" },
+                { korean: "이름이 뭐예요?", pronunciation: "i-reu-mi mwo-ye-yo?", meaning: "What's your name?" },
+                { korean: "저는 학생입니다", pronunciation: "jeo-neun hak-saeng-im-ni-da", meaning: "I am a student" },
+                { korean: "한국어를 배워요", pronunciation: "han-gu-geo-reul bae-wo-yo", meaning: "I'm learning Korean" },
+                { korean: "오늘 날씨 좋아요", pronunciation: "o-neul nal-ssi jo-a-yo", meaning: "The weather is nice today" },
+                { korean: "배고파요", pronunciation: "bae-go-pa-yo", meaning: "I'm hungry" },
+                { korean: "물 주세요", pronunciation: "mul ju-se-yo", meaning: "Water, please" },
+                { korean: "얼마예요?", pronunciation: "eol-ma-ye-yo?", meaning: "How much is it?" },
+                { korean: "화장실이 어디예요?", pronunciation: "hwa-jang-si-ri eo-di-ye-yo?", meaning: "Where is the bathroom?" },
+                { korean: "좋아해요", pronunciation: "jo-a-hae-yo", meaning: "I like it" },
+                { korean: "몰라요", pronunciation: "mol-la-yo", meaning: "I don't know" },
+                { korean: "알겠습니다", pronunciation: "al-get-seum-ni-da", meaning: "I understand" },
+                { korean: "도와주세요", pronunciation: "do-wa-ju-se-yo", meaning: "Please help me" }
+            ]
+        };
+
+        // Spaced repetition variables
+        let currentCardIndex = 0;
+        let cards = [];
+        let cardQueue = [];
+        let currentCard = null;
+        let reviewCount = 0;
+        let totalReviews = 0;
+        
+        // Practice variables
+        let currentPracticeItem = null;
+        let currentDifficulty = 'basic';
+        let audio = new Audio();
+
+        // Initialize the app
+        window.onload = function() {
+            renderHangulCharts();
+            initializeFlashcards();
+        };
+
+        // Tab navigation
+        function openTab(tabName) {
+            const tabs = document.getElementsByClassName('tab');
+            const tabContents = document.getElementsByClassName('tab-content');
+            
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+                tabContents[i].classList.remove('active');
+            }
+            
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`.tab[onclick="openTab('${tabName}')"]`).classList.add('active');
+            
+            if (tabName === 'flashcards') {
+                updateProgress();
+            }
+        }
+
+        // Render Hangul charts
+        function renderHangulCharts() {
+            renderChart('consonants-chart', hangulData.consonants);
+            renderChart('vowels-chart', hangulData.vowels);
+            renderChart('syllables-chart', hangulData.syllables);
+        }
+
+        function renderChart(chartId, data) {
+            const chart = document.getElementById(chartId);
+            chart.innerHTML = '';
+            
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'hangul-card';
+                card.innerHTML = `
+                    <div class="hangul-char">${item.char}</div>
+                    <div class="pronunciation">${item.pron}</div>
+                    <button class="audio-btn" onclick="playAudio('${item.audio}')">Play Sound</button>
+                `;
+                chart.appendChild(card);
+            });
+        }
+
+        // Audio functions
+        function playAudio(audioUrl) {
+            audio.pause();
+            audio = new Audio(audioUrl);
+            audio.play();
+        }
+
+        function playCurrentAudio(event) {
+            event.stopPropagation();
+            if (currentCard && currentCard.audio) {
+                playAudio(currentCard.audio);
+            }
+        }
+
+        function playPracticeAudio() {
+            if (currentPracticeItem && currentPracticeItem.audio) {
+                playAudio(currentPracticeItem.audio);
+            }
+        }
+
+        // Flashcard functions
+        function initializeFlashcards() {
+            // Combine all characters into one deck
+            cards = [
+                ...hangulData.consonants,
+                ...hangulData.vowels,
+                ...hangulData.syllables
+            ].map((card, index) => ({
+                ...card,
+                id: index,
+                nextReview: new Date(),
+                interval: 1,
+                repetitions: 0,
+                ease: 2.5
+            }));
+            
+            totalReviews = cards.length;
+            shuffleArray(cards);
+            showNextCard();
+        }
+
+        function showNextCard() {
+            // If queue is empty, refill with due cards
+            if (cardQueue.length === 0) {
+                const now = new Date();
+                cardQueue = cards.filter(card => card.nextReview <= now);
+                
+                // If no cards are due, show all cards in random order
+                if (cardQueue.length === 0) {
+                    cardQueue = [...cards];
+                    shuffleArray(cardQueue);
+                }
+            }
+            
+            // Get next card from queue
+            currentCard = cardQueue.shift();
+            
+            // Update UI
+            document.getElementById('flashcard').classList.remove('flipped');
+            document.getElementById('flashcard-front-char').textContent = currentCard.char;
+            document.getElementById('flashcard-back-char').textContent = currentCard.pron;
+            
+            updateProgress();
+        }
+
+        function flipCard() {
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+
+        function rateCard(rating) {
+            // 0 = Again, 1 = Good, 2 = Easy
+            if (!currentCard) return;
+            
+            // Update card stats based on SM-2 algorithm
+            if (rating === 0) {
+                // Again - reset repetitions and interval
+                currentCard.repetitions = 0;
+                currentCard.interval = 1;
+            } else {
+                // Good or Easy - update interval and repetitions
+                currentCard.repetitions += 1;
+                
+                if (currentCard.repetitions === 1) {
+                    currentCard.interval = 1;
+                } else if (currentCard.repetitions === 2) {
+                    currentCard.interval = 6;
+                } else {
+                    currentCard.interval = Math.round(currentCard.interval * currentCard.ease);
+                }
+                
+                // Adjust ease factor based on rating
+                if (rating === 1) {
+                    currentCard.ease = Math.max(1.3, currentCard.ease - 0.15);
+                } else if (rating === 2) {
+                    currentCard.ease = Math.min(2.5, currentCard.ease + 0.15);
+                }
+            }
+            
+            // Schedule next review
+            const now = new Date();
+            currentCard.nextReview = new Date(now.getTime() + currentCard.interval * 24 * 60 * 60 * 1000);
+            
+            // Update review count
+            reviewCount++;
+            showNextCard();
+        }
+
+        function updateProgress() {
+            const now = new Date();
+            const dueCards = cards.filter(card => card.nextReview <= now).length;
+            const totalCards = cards.length;
+            const progressPercent = (reviewCount / (totalCards * 2)) * 100; // Multiply by 2 for more realistic progress
+            
+            document.getElementById('progress-bar').style.width = `${Math.min(100, progressPercent)}%`;
+            document.getElementById('progress-text').textContent = 
+                `${reviewCount} reviews | ${dueCards}/${totalCards} due`;
+        }
+
+        // Practice functions
+        function updateDifficulty() {
+            currentDifficulty = document.getElementById('difficulty').value;
+            document.getElementById('answer').style.display = 'none';
+        }
+
+        function generatePractice() {
+            document.getElementById('answer').style.display = 'none';
+            
+            if (currentDifficulty === 'basic') {
+                // Show random character
+                const randomType = Math.random() < 0.5 ? 
+                    (Math.random() < 0.5 ? hangulData.consonants : hangulData.vowels) : 
+                    hangulData.syllables;
+                const randomIndex = Math.floor(Math.random() * randomType.length);
+                currentPracticeItem = randomType[randomIndex];
+                document.getElementById('practice-display').textContent = currentPracticeItem.char;
+            } 
+            else if (currentDifficulty === 'words') {
+                // Show random word
+                const randomIndex = Math.floor(Math.random() * practiceData.words.length);
+                currentPracticeItem = practiceData.words[randomIndex];
+                document.getElementById('practice-display').textContent = currentPracticeItem.korean;
+            } 
+            else {
+                // Show random sentence
+                const randomIndex = Math.floor(Math.random() * practiceData.sentences.length);
+                currentPracticeItem = practiceData.sentences[randomIndex];
+                document.getElementById('practice-display').textContent = currentPracticeItem.korean;
+            }
+        }
+
+        function showAnswer() {
+            if (!currentPracticeItem) return;
+            
+            const answerDiv = document.getElementById('answer');
+            const answerText = document.getElementById('answer-text');
+            
+            if (currentDifficulty === 'basic') {
+                answerText.innerHTML = `
+                    <p><strong>Pronunciation:</strong> ${currentPracticeItem.pron}</p>
+                `;
+            } 
+            else if (currentDifficulty === 'words') {
+                answerText.innerHTML = `
+                    <p><strong>Pronunciation:</strong> ${currentPracticeItem.pronunciation}</p>
+                    <p><strong>Meaning:</strong> ${currentPracticeItem.meaning}</p>
+                `;
+            } 
+            else {
+                answerText.innerHTML = `
+                    <p><strong>Pronunciation:</strong> ${currentPracticeItem.pronunciation}</p>
+                    <p><strong>Meaning:</strong> ${currentPracticeItem.meaning}</p>
+                `;
+            }
+            
+            answerDiv.style.display = 'block';
+        }
+
+        // Utility functions
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>
