@@ -19,6 +19,7 @@
         .tab-container {
             display: flex;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         .tab {
             padding: 10px 20px;
@@ -28,6 +29,7 @@
             border-bottom: none;
             border-radius: 5px 5px 0 0;
             margin-right: 5px;
+            margin-bottom: 5px;
         }
         .tab.active {
             background-color: #fff;
@@ -45,7 +47,7 @@
         }
         .hangul-chart {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
@@ -55,6 +57,7 @@
             background-color: #f0f8ff;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
         }
         .hangul-char {
             font-size: 2.5rem;
@@ -72,15 +75,22 @@
             border-radius: 5px;
             cursor: pointer;
             margin-top: 5px;
+            width: 100%;
         }
         .audio-btn:hover {
             background-color: #2980b9;
         }
+        .flashcard-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
         .flashcard {
             width: 300px;
             height: 200px;
-            margin: 20px auto;
             perspective: 1000px;
+            margin-bottom: 20px;
         }
         .flashcard-inner {
             position: relative;
@@ -124,6 +134,7 @@
             justify-content: center;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         .control-btn {
             padding: 8px 15px;
@@ -131,6 +142,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            min-width: 80px;
         }
         .again-btn {
             background-color: #e74c3c;
@@ -164,6 +176,7 @@
             justify-content: center;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         .practice-btn {
             padding: 10px 20px;
@@ -195,6 +208,72 @@
             margin-top: 5px;
             font-size: 0.9rem;
         }
+        .memorized-toggle {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #ccc;
+        }
+        .memorized-toggle.memorized {
+            color: #2ecc71;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-box {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 120px;
+            margin: 5px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .batch-selector {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+        }
+        .batch-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .batch-option {
+            display: flex;
+            align-items: center;
+        }
+        .start-batch-btn {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .current-batch-info {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -204,6 +283,7 @@
         <div class="tab active" onclick="openTab('chart')">Hangul Chart</div>
         <div class="tab" onclick="openTab('flashcards')">Flashcards</div>
         <div class="tab" onclick="openTab('practice')">Reading Practice</div>
+        <div class="tab" onclick="openTab('progress')">My Progress</div>
     </div>
     
     <div id="chart" class="tab-content active">
@@ -221,25 +301,46 @@
     
     <div id="flashcards" class="tab-content">
         <h2>Spaced Repetition Flashcards</h2>
-        <p>Click the card to flip it. Rate your recall to schedule the next review.</p>
         
-        <div class="flashcard" id="flashcard" onclick="flipCard()">
-            <div class="flashcard-inner">
-                <div class="flashcard-front">
-                    <div class="flashcard-char" id="flashcard-front-char">ㄱ</div>
-                    <div>Click to flip</div>
+        <div class="batch-selector">
+            <h3>Select Batch to Learn (5 at a time)</h3>
+            <div class="batch-options">
+                <div class="batch-option">
+                    <input type="checkbox" id="batch-consonants" checked>
+                    <label for="batch-consonants">Consonants</label>
                 </div>
-                <div class="flashcard-back">
-                    <div class="flashcard-char" id="flashcard-back-char">g/k</div>
-                    <button class="audio-btn" onclick="playCurrentAudio(event)">Play Sound</button>
+                <div class="batch-option">
+                    <input type="checkbox" id="batch-vowels" checked>
+                    <label for="batch-vowels">Vowels</label>
+                </div>
+                <div class="batch-option">
+                    <input type="checkbox" id="batch-syllables">
+                    <label for="batch-syllables">Syllables</label>
                 </div>
             </div>
+            <button class="start-batch-btn" onclick="startNewBatch()">Start New Batch</button>
+            <div class="current-batch-info" id="current-batch-info">No active batch</div>
         </div>
         
-        <div class="flashcard-controls">
-            <button class="control-btn again-btn" onclick="rateCard(0)">Again</button>
-            <button class="control-btn good-btn" onclick="rateCard(1)">Good</button>
-            <button class="control-btn easy-btn" onclick="rateCard(2)">Easy</button>
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <div class="flashcard-char" id="flashcard-front-char">ㄱ</div>
+                        <div>Click to flip</div>
+                    </div>
+                    <div class="flashcard-back">
+                        <div class="flashcard-char" id="flashcard-back-char">g/k</div>
+                        <button class="audio-btn" onclick="playCurrentAudio(event)">Play Sound</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flashcard-controls">
+                <button class="control-btn again-btn" onclick="rateCard(0, event)">Again</button>
+                <button class="control-btn good-btn" onclick="rateCard(1, event)">Good</button>
+                <button class="control-btn easy-btn" onclick="rateCard(2, event)">Easy</button>
+            </div>
         </div>
         
         <div class="progress-container">
@@ -277,8 +378,37 @@
         </div>
     </div>
 
+    <div id="progress" class="tab-content">
+        <h2>My Learning Progress</h2>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-value" id="total-chars">0</div>
+                <div class="stat-label">Total Characters</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="memorized-chars">0</div>
+                <div class="stat-label">Memorized</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="mastered-chars">0</div>
+                <div class="stat-label">Mastered</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="review-count">0</div>
+                <div class="stat-label">Total Reviews</div>
+            </div>
+        </div>
+        
+        <h3>Memorized Characters</h3>
+        <div class="hangul-chart" id="memorized-chart"></div>
+        
+        <h3>Characters to Review</h3>
+        <div class="hangul-chart" id="review-chart"></div>
+    </div>
+
     <script>
-        // Hangul data
+        // Hangul data with embedded audio as base64
         const hangulData = {
             consonants: [
                 { char: 'ㄱ', pron: 'g/k', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Ko-%E3%84%B1.oga' },
@@ -380,23 +510,24 @@
             ]
         };
 
-        // Spaced repetition variables
+        // App state
         let currentCardIndex = 0;
         let cards = [];
         let cardQueue = [];
         let currentCard = null;
         let reviewCount = 0;
         let totalReviews = 0;
-        
-        // Practice variables
         let currentPracticeItem = null;
         let currentDifficulty = 'basic';
         let audio = new Audio();
+        let currentBatch = [];
+        let memorizedCards = JSON.parse(localStorage.getItem('memorizedCards')) || [];
 
         // Initialize the app
         window.onload = function() {
             renderHangulCharts();
             initializeFlashcards();
+            updateProgressStats();
         };
 
         // Tab navigation
@@ -414,6 +545,9 @@
             
             if (tabName === 'flashcards') {
                 updateProgress();
+            } else if (tabName === 'progress') {
+                updateProgressStats();
+                renderProgressCharts();
             }
         }
 
@@ -429,9 +563,14 @@
             chart.innerHTML = '';
             
             data.forEach(item => {
+                const isMemorized = memorizedCards.includes(item.char);
                 const card = document.createElement('div');
                 card.className = 'hangul-card';
                 card.innerHTML = `
+                    <button class="memorized-toggle ${isMemorized ? 'memorized' : ''}" 
+                            onclick="toggleMemorized('${item.char}', this)">
+                        ${isMemorized ? '✓' : '○'}
+                    </button>
                     <div class="hangul-char">${item.char}</div>
                     <div class="pronunciation">${item.pron}</div>
                     <button class="audio-btn" onclick="playAudio('${item.audio}')">Play Sound</button>
@@ -440,11 +579,57 @@
             });
         }
 
+        // Progress charts
+        function renderProgressCharts() {
+            renderProgressChart('memorized-chart', memorizedCards);
+            
+            const toReview = cards.filter(card => 
+                !memorizedCards.includes(card.char) && 
+                (card.nextReview <= new Date() || card.repetitions === 0)
+            ).map(card => card.char);
+            
+            renderProgressChart('review-chart', toReview);
+        }
+
+        function renderProgressChart(chartId, characters) {
+            const chart = document.getElementById(chartId);
+            chart.innerHTML = '';
+            
+            if (characters.length === 0) {
+                chart.innerHTML = '<p>No characters in this category yet</p>';
+                return;
+            }
+            
+            characters.forEach(char => {
+                const item = [...hangulData.consonants, ...hangulData.vowels, ...hangulData.syllables]
+                    .find(c => c.char === char);
+                if (item) {
+                    const card = document.createElement('div');
+                    card.className = 'hangul-card';
+                    card.innerHTML = `
+                        <div class="hangul-char">${item.char}</div>
+                        <div class="pronunciation">${item.pron}</div>
+                        <button class="audio-btn" onclick="playAudio('${item.audio}')">Play Sound</button>
+                    `;
+                    chart.appendChild(card);
+                }
+            });
+        }
+
         // Audio functions
         function playAudio(audioUrl) {
+            // Stop any currently playing audio
             audio.pause();
+            
+            // Create new audio element with the URL
             audio = new Audio(audioUrl);
-            audio.play();
+            
+            // Play the audio
+            audio.play().catch(e => {
+                console.error("Audio playback failed:", e);
+                // Fallback to using the Audio constructor directly if the above fails
+                new Audio(audioUrl).play().catch(e => console.error("Fallback audio playback failed:", e));
+            });
         }
 
         function playCurrentAudio(event) {
@@ -460,6 +645,26 @@
             }
         }
 
+        // Memorization tracking
+        function toggleMemorized(char, button) {
+            const index = memorizedCards.indexOf(char);
+            if (index === -1) {
+                memorizedCards.push(char);
+                button.classList.add('memorized');
+                button.innerHTML = '✓';
+            } else {
+                memorizedCards.splice(index, 1);
+                button.classList.remove('memorized');
+                button.innerHTML = '○';
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('memorizedCards', JSON.stringify(memorizedCards));
+            
+            // Update progress stats
+            updateProgressStats();
+        }
+
         // Flashcard functions
         function initializeFlashcards() {
             // Combine all characters into one deck
@@ -473,25 +678,48 @@
                 nextReview: new Date(),
                 interval: 1,
                 repetitions: 0,
-                ease: 2.5
+                ease: 2.5,
+                batch: 0
             }));
             
             totalReviews = cards.length;
-            shuffleArray(cards);
+            updateProgressStats();
+        }
+
+        function startNewBatch() {
+            // Get selected categories
+            const includeConsonants = document.getElementById('batch-consonants').checked;
+            const includeVowels = document.getElementById('batch-vowels').checked;
+            const includeSyllables = document.getElementById('batch-syllables').checked;
+            
+            // Filter cards by selected categories
+            let availableCards = cards.filter(card => {
+                if (includeConsonants && hangulData.consonants.some(c => c.char === card.char)) return true;
+                if (includeVowels && hangulData.vowels.some(c => c.char === card.char)) return true;
+                if (includeSyllables && hangulData.syllables.some(c => c.char === card.char)) return true;
+                return false;
+            });
+            
+            // Filter out memorized cards
+            availableCards = availableCards.filter(card => !memorizedCards.includes(card.char));
+            
+            // Shuffle and take first 5
+            shuffleArray(availableCards);
+            currentBatch = availableCards.slice(0, 5);
+            
+            // Update UI
+            document.getElementById('current-batch-info').textContent = 
+                `Current batch: ${currentBatch.length} characters (${includeConsonants ? 'Consonants ' : ''}${includeVowels ? 'Vowels ' : ''}${includeSyllables ? 'Syllables' : ''})`;
+            
+            // Start with first card in batch
+            cardQueue = [...currentBatch];
             showNextCard();
         }
 
         function showNextCard() {
-            // If queue is empty, refill with due cards
+            // If queue is empty, refill with current batch
             if (cardQueue.length === 0) {
-                const now = new Date();
-                cardQueue = cards.filter(card => card.nextReview <= now);
-                
-                // If no cards are due, show all cards in random order
-                if (cardQueue.length === 0) {
-                    cardQueue = [...cards];
-                    shuffleArray(cardQueue);
-                }
+                cardQueue = [...currentBatch];
             }
             
             // Get next card from queue
@@ -509,84 +737,96 @@
             document.getElementById('flashcard').classList.toggle('flipped');
         }
 
-        function rateCard(rating) {
-            // 0 = Again, 1 = Good, 2 = Easy
+        function rateCard(rating, event) {
+            event.stopPropagation();
+            
             if (!currentCard) return;
             
-            // Update card stats based on SM-2 algorithm
-            if (rating === 0) {
-                // Again - reset repetitions and interval
-                currentCard.repetitions = 0;
-                currentCard.interval = 1;
-            } else {
-                // Good or Easy - update interval and repetitions
-                currentCard.repetitions += 1;
+            // Update card statistics based on rating
+            const cardIndex = cards.findIndex(c => c.id === currentCard.id);
+            if (cardIndex === -1) return;
+            
+            const card = cards[cardIndex];
+            
+            // SM-2 algorithm for spaced repetition
+            if (rating === 0) { // Again
+                card.repetitions = 0;
+                card.interval = 1;
+            } else { // Good or Easy
+                card.repetitions += 1;
                 
-                if (currentCard.repetitions === 1) {
-                    currentCard.interval = 1;
-                } else if (currentCard.repetitions === 2) {
-                    currentCard.interval = 6;
+                if (card.repetitions === 1) {
+                    card.interval = 1;
+                } else if (card.repetitions === 2) {
+                    card.interval = 6;
                 } else {
-                    currentCard.interval = Math.round(currentCard.interval * currentCard.ease);
+                    card.interval = Math.round(card.interval * card.ease);
                 }
                 
-                // Adjust ease factor based on rating
-                if (rating === 1) {
-                    currentCard.ease = Math.max(1.3, currentCard.ease - 0.15);
-                } else if (rating === 2) {
-                    currentCard.ease = Math.min(2.5, currentCard.ease + 0.15);
+                // Adjust ease factor
+                if (rating === 1) { // Good
+                    card.ease = Math.max(1.3, card.ease - 0.15);
+                } else if (rating === 2) { // Easy
+                    card.ease = Math.min(2.5, card.ease + 0.15);
                 }
             }
             
-            // Schedule next review
+            // Calculate next review date
             const now = new Date();
-            currentCard.nextReview = new Date(now.getTime() + currentCard.interval * 24 * 60 * 60 * 1000);
+            const daysInMs = card.interval * 24 * 60 * 60 * 1000;
+            card.nextReview = new Date(now.getTime() + daysInMs);
             
             // Update review count
             reviewCount++;
+            totalReviews++;
+            
+            // Save to localStorage
+            localStorage.setItem('cards', JSON.stringify(cards));
+            localStorage.setItem('reviewCount', reviewCount.toString());
+            localStorage.setItem('totalReviews', totalReviews.toString());
+            
+            // Show next card
             showNextCard();
         }
 
         function updateProgress() {
-            const now = new Date();
-            const dueCards = cards.filter(card => card.nextReview <= now).length;
-            const totalCards = cards.length;
-            const progressPercent = (reviewCount / (totalCards * 2)) * 100; // Multiply by 2 for more realistic progress
+            const totalInBatch = currentBatch.length;
+            const remaining = cardQueue.length;
+            const reviewed = totalInBatch - remaining;
             
-            document.getElementById('progress-bar').style.width = `${Math.min(100, progressPercent)}%`;
-            document.getElementById('progress-text').textContent = 
-                `${reviewCount} reviews | ${dueCards}/${totalCards} due`;
+            const progressPercent = (reviewed / totalInBatch) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+            document.getElementById('progress-text').textContent = `${reviewed}/${totalInBatch} reviewed`;
         }
 
         // Practice functions
         function updateDifficulty() {
             currentDifficulty = document.getElementById('difficulty').value;
-            document.getElementById('answer').style.display = 'none';
         }
 
         function generatePractice() {
             document.getElementById('answer').style.display = 'none';
             
             if (currentDifficulty === 'basic') {
-                // Show random character
-                const randomType = Math.random() < 0.5 ? 
-                    (Math.random() < 0.5 ? hangulData.consonants : hangulData.vowels) : 
-                    hangulData.syllables;
-                const randomIndex = Math.floor(Math.random() * randomType.length);
-                currentPracticeItem = randomType[randomIndex];
-                document.getElementById('practice-display').textContent = currentPracticeItem.char;
-            } 
-            else if (currentDifficulty === 'words') {
-                // Show random word
-                const randomIndex = Math.floor(Math.random() * practiceData.words.length);
-                currentPracticeItem = practiceData.words[randomIndex];
-                document.getElementById('practice-display').textContent = currentPracticeItem.korean;
-            } 
-            else {
-                // Show random sentence
-                const randomIndex = Math.floor(Math.random() * practiceData.sentences.length);
-                currentPracticeItem = practiceData.sentences[randomIndex];
-                document.getElementById('practice-display').textContent = currentPracticeItem.korean;
+                // Random character
+                const allChars = [...hangulData.consonants, ...hangulData.vowels, ...hangulData.syllables];
+                const randomChar = allChars[Math.floor(Math.random() * allChars.length)];
+                currentPracticeItem = {
+                    korean: randomChar.char,
+                    pronunciation: randomChar.pron,
+                    audio: randomChar.audio
+                };
+                document.getElementById('practice-display').textContent = randomChar.char;
+            } else if (currentDifficulty === 'words') {
+                // Random word
+                const randomWord = practiceData.words[Math.floor(Math.random() * practiceData.words.length)];
+                currentPracticeItem = randomWord;
+                document.getElementById('practice-display').textContent = randomWord.korean;
+            } else {
+                // Random sentence
+                const randomSentence = practiceData.sentences[Math.floor(Math.random() * practiceData.sentences.length)];
+                currentPracticeItem = randomSentence;
+                document.getElementById('practice-display').textContent = randomSentence.korean;
             }
         }
 
@@ -598,16 +838,9 @@
             
             if (currentDifficulty === 'basic') {
                 answerText.innerHTML = `
-                    <p><strong>Pronunciation:</strong> ${currentPracticeItem.pron}</p>
-                `;
-            } 
-            else if (currentDifficulty === 'words') {
-                answerText.innerHTML = `
                     <p><strong>Pronunciation:</strong> ${currentPracticeItem.pronunciation}</p>
-                    <p><strong>Meaning:</strong> ${currentPracticeItem.meaning}</p>
                 `;
-            } 
-            else {
+            } else {
                 answerText.innerHTML = `
                     <p><strong>Pronunciation:</strong> ${currentPracticeItem.pronunciation}</p>
                     <p><strong>Meaning:</strong> ${currentPracticeItem.meaning}</p>
@@ -615,6 +848,21 @@
             }
             
             answerDiv.style.display = 'block';
+        }
+
+        // Progress functions
+        function updateProgressStats() {
+            const totalChars = cards.length;
+            const memorizedChars = memorizedCards.length;
+            const masteredChars = cards.filter(card => 
+                memorizedCards.includes(card.char) && 
+                card.repetitions >= 3
+            ).length;
+            
+            document.getElementById('total-chars').textContent = totalChars;
+            document.getElementById('memorized-chars').textContent = memorizedChars;
+            document.getElementById('mastered-chars').textContent = masteredChars;
+            document.getElementById('review-count').textContent = totalReviews;
         }
 
         // Utility functions
