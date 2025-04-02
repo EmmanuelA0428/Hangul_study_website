@@ -306,6 +306,30 @@
             cursor: pointer;
             margin-top: 10px;
         }
+        .batch-selection {
+            margin-top: 15px;
+        }
+        .batch-group {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .batch-group h4 {
+            margin-top: 0;
+        }
+        .batch-btn {
+            padding: 5px 10px;
+            margin: 3px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .batch-btn.active {
+            background-color: #2ecc71;
+        }
     </style>
 </head>
 <body>
@@ -335,7 +359,7 @@
         <h2>Spaced Repetition Flashcards</h2>
         
         <div class="batch-selector">
-            <h3>Select Batch to Learn (5 at a time)</h3>
+            <h3>Select Batch to Learn</h3>
             <div class="batch-options">
                 <div class="batch-option">
                     <input type="checkbox" id="batch-consonants" checked>
@@ -350,7 +374,11 @@
                     <label for="batch-syllables">Syllables</label>
                 </div>
             </div>
-            <button class="start-batch-btn" onclick="startNewBatch()">Start New Batch</button>
+            
+            <div class="batch-selection" id="batch-selection">
+                <!-- Batch groups will be inserted here -->
+            </div>
+            
             <div class="current-batch-info" id="current-batch-info">No active batch</div>
         </div>
         
@@ -396,6 +424,22 @@
                 <option value="words">Simple Words</option>
                 <option value="sentences">Short Sentences</option>
             </select>
+            
+            <div id="basic-options" style="margin-top: 10px;">
+                <label>Character Types:</label>
+                <div>
+                    <input type="checkbox" id="practice-consonants" checked>
+                    <label for="practice-consonants">Consonants</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="practice-vowels" checked>
+                    <label for="practice-vowels">Vowels</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="practice-syllables">
+                    <label for="practice-syllables">Syllables</label>
+                </div>
+            </div>
         </div>
         
         <div class="practice-container">
@@ -559,6 +603,7 @@
         let currentBatch = [];
         let memorizedCards = JSON.parse(localStorage.getItem('memorizedCards')) || [];
         let audioEnabled = true;
+        let allBatches = [];
 
         // Initialize the app
         window.onload = function() {
@@ -576,9 +621,9 @@
             testAudio.src = 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...';
             testAudio.play().then(() => {
                 audioEnabled = true;
-            }).catch(() => {
+            }).catch((e) => {
                 audioEnabled = false;
-                alert("Audio playback is blocked by your browser. Please enable audio to hear pronunciations.");
+                console.log("Audio playback is blocked by your browser:", e);
             });
         }
 
@@ -597,6 +642,7 @@
             
             if (tabName === 'flashcards') {
                 updateProgress();
+                updateBatchSelection();
             } else if (tabName === 'progress') {
                 updateProgressStats();
                 renderProgressCharts();
@@ -626,7 +672,7 @@
                     <div class="hangul-char">${item.char}</div>
                     <div class="pronunciation">Sound: ${item.pron}</div>
                     <div class="char-name">${item.name}</div>
-                    <button class="audio-btn" onclick="playAudio('${item.audio}')">Play Sound</button>
+                    <button class="audio-btn" onclick="playAudio('${item.audio}', event)">Play Sound</button>
                 `;
                 chart.appendChild(card);
             });
@@ -663,7 +709,7 @@
                         <div class="hangul-char">${item.char}</div>
                         <div class="pronunciation">Sound: ${item.pron}</div>
                         <div class="char-name">${item.name}</div>
-                        <button class="audio-btn" onclick="playAudio('${item.audio}')">Play Sound</button>
+                        <button class="audio-btn" onclick="playAudio('${item.audio}', event)">Play Sound</button>
                     `;
                     chart.appendChild(card);
                 }
@@ -671,7 +717,8 @@
         }
 
         // Audio functions
-        function playAudio(audioUrl) {
+        function playAudio(audioUrl, event) {
+            if (event) event.stopPropagation();
             if (!audioEnabled) return;
             
             // Stop any currently playing audio
@@ -691,7 +738,7 @@
         function playCurrentAudio(event) {
             if (event) event.stopPropagation();
             if (currentCard && currentCard.audio) {
-                playAudio(currentCard.audio);
+                playAudio(currentCard.audio, event);
             }
         }
 
@@ -773,9 +820,10 @@
             
             totalReviews = cards.length;
             updateProgressStats();
+            updateBatchSelection();
         }
 
-        function startNewBatch() {
+        function updateBatchSelection() {
             // Get selected categories
             const includeConsonants = document.getElementById('batch-consonants').checked;
             const includeVowels = document.getElementById('batch-vowels').checked;
@@ -792,19 +840,55 @@
             // Filter out memorized cards
             availableCards = availableCards.filter(card => !memorizedCards.includes(card.char));
             
-            // Prioritize cards that need review soonest
-            availableCards.sort((a, b) => a.nextReview - b.nextReview);
+            // Group into batches of 5
+            allBatches = [];
+            for (let i = 0; i < availableCards.length; i += 5) {
+                allBatches.push(availableCards.slice(i, i + 5));
+            }
             
-            // Take first 5
-            currentBatch = availableCards.slice(0, 5);
+            // Update UI with batch selection
+            const batchSelection = document.getElementById('batch-selection');
+            batchSelection.innerHTML = '';
             
-            // Update UI
-            document.getElementById('current-batch-info').textContent = 
-                `Current batch: ${currentBatch.length} characters (${includeConsonants ? 'Consonants ' : ''}${includeVowels ? 'Vowels ' : ''}${includeSyllables ? 'Syllables' : ''})`;
+            if (allBatches.length === 0) {
+                batchSelection.innerHTML = '<p>No batches available with current filters</p>';
+                return;
+            }
             
-            // Start with first card in batch
-            cardQueue = [...currentBatch];
-            showNextCard();
+            allBatches.forEach((batch, index) => {
+                const batchGroup = document.createElement('div');
+                batchGroup.className = 'batch-group';
+                
+                const batchTitle = document.createElement('h4');
+                batchTitle.textContent = `Batch ${index + 1}`;
+                
+                const batchChars = document.createElement('div');
+                batchChars.textContent = batch.map(c => c.char).join(', ');
+                
+                const batchBtn = document.createElement('button');
+                batchBtn.className = 'batch-btn';
+                batchBtn.textContent = 'Practice This Batch';
+                batchBtn.onclick = () => startSpecificBatch(index);
+                
+                batchGroup.appendChild(batchTitle);
+                batchGroup.appendChild(batchChars);
+                batchGroup.appendChild(batchBtn);
+                batchSelection.appendChild(batchGroup);
+            });
+        }
+
+        function startSpecificBatch(batchIndex) {
+            if (batchIndex >= 0 && batchIndex < allBatches.length) {
+                currentBatch = [...allBatches[batchIndex]];
+                cardQueue = [...currentBatch];
+                
+                // Update UI
+                document.getElementById('current-batch-info').textContent = 
+                    `Current batch: ${currentBatch.length} characters (${currentBatch.map(c => c.char).join(', ')})`;
+                
+                // Start with first card in batch
+                showNextCard();
+            }
         }
 
         function showNextCard() {
@@ -915,15 +999,32 @@
         // Practice functions
         function updateDifficulty() {
             currentDifficulty = document.getElementById('difficulty').value;
+            const basicOptions = document.getElementById('basic-options');
+            basicOptions.style.display = currentDifficulty === 'basic' ? 'block' : 'none';
         }
 
         function generatePractice() {
             document.getElementById('answer').style.display = 'none';
             
             if (currentDifficulty === 'basic') {
-                // Random character
-                const allChars = [...hangulData.consonants, ...hangulData.vowels, ...hangulData.syllables];
-                const randomChar = allChars[Math.floor(Math.random() * allChars.length)];
+                // Get selected character types
+                const includeConsonants = document.getElementById('practice-consonants').checked;
+                const includeVowels = document.getElementById('practice-vowels').checked;
+                const includeSyllables = document.getElementById('practice-syllables').checked;
+                
+                // Filter characters based on selection
+                let practiceChars = [];
+                if (includeConsonants) practiceChars = practiceChars.concat(hangulData.consonants);
+                if (includeVowels) practiceChars = practiceChars.concat(hangulData.vowels);
+                if (includeSyllables) practiceChars = practiceChars.concat(hangulData.syllables);
+                
+                if (practiceChars.length === 0) {
+                    document.getElementById('practice-display').textContent = "Please select at least one character type";
+                    return;
+                }
+                
+                // Random character from selected types
+                const randomChar = practiceChars[Math.floor(Math.random() * practiceChars.length)];
                 currentPracticeItem = {
                     korean: randomChar.char,
                     pronunciation: randomChar.pron,
