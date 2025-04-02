@@ -47,7 +47,7 @@
         }
         .hangul-chart {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
@@ -64,8 +64,14 @@
             margin-bottom: 5px;
         }
         .pronunciation {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .char-name {
             font-style: italic;
             color: #666;
+            font-size: 0.9rem;
+            margin: 5px 0;
         }
         .audio-btn {
             background-color: #3498db;
@@ -88,7 +94,7 @@
         }
         .flashcard {
             width: 300px;
-            height: 200px;
+            height: 250px;
             perspective: 1000px;
             margin-bottom: 20px;
         }
@@ -127,6 +133,14 @@
         }
         .flashcard-char {
             font-size: 4rem;
+            margin-bottom: 10px;
+        }
+        .flashcard-pronunciation {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        .flashcard-name {
+            font-style: italic;
             margin-bottom: 10px;
         }
         .flashcard-controls {
@@ -274,6 +288,24 @@
             font-style: italic;
             color: #666;
         }
+        .memorize-btn {
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .hint-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -330,8 +362,12 @@
                         <div>Click to flip</div>
                     </div>
                     <div class="flashcard-back">
-                        <div class="flashcard-char" id="flashcard-back-char">g/k</div>
+                        <div class="flashcard-char" id="flashcard-back-char">ㄱ</div>
+                        <div class="flashcard-pronunciation" id="flashcard-pronunciation">Sound: g/k</div>
+                        <div class="flashcard-name" id="flashcard-name">Name: 기역 (giyeok)</div>
                         <button class="audio-btn" onclick="playCurrentAudio(event)">Play Sound</button>
+                        <button class="hint-btn" onclick="showHint(event)">Show Hint</button>
+                        <button class="memorize-btn" onclick="toggleMemorizedFromFlashcard(event)">I Know This</button>
                     </div>
                 </div>
             </div>
@@ -408,67 +444,67 @@
     </div>
 
     <script>
-        // Hangul data with embedded audio as base64
+        // Hangul data with names and audio
         const hangulData = {
             consonants: [
-                { char: 'ㄱ', pron: 'g/k', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Ko-%E3%84%B1.oga' },
-                { char: 'ㄴ', pron: 'n', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Ko-%E3%84%B4.oga' },
-                { char: 'ㄷ', pron: 'd/t', audio: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Ko-%E3%84%B7.oga' },
-                { char: 'ㄹ', pron: 'r/l', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Ko-%E3%84%B9.oga' },
-                { char: 'ㅁ', pron: 'm', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Ko-%E3%85%81.oga' },
-                { char: 'ㅂ', pron: 'b/p', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-%E3%85%82.oga' },
-                { char: 'ㅅ', pron: 's', audio: 'https://upload.wikimedia.org/wikipedia/commons/2/2b/Ko-%E3%85%85.oga' },
-                { char: 'ㅇ', pron: 'ng/-', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%85%87.oga' },
-                { char: 'ㅈ', pron: 'j', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Ko-%E3%85%88.oga' },
-                { char: 'ㅊ', pron: 'ch', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Ko-%E3%85%8A.oga' },
-                { char: 'ㅋ', pron: 'k', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Ko-%E3%85%8B.oga' },
-                { char: 'ㅌ', pron: 't', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%8C.oga' },
-                { char: 'ㅍ', pron: 'p', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%8D.oga' },
-                { char: 'ㅎ', pron: 'h', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%8E.oga' },
-                { char: 'ㄲ', pron: 'kk', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-%E3%84%B2.oga' },
-                { char: 'ㄸ', pron: 'tt', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%84%B8.oga' },
-                { char: 'ㅃ', pron: 'pp', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6d/Ko-%E3%85%83.oga' },
-                { char: 'ㅆ', pron: 'ss', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%85%86.oga' },
-                { char: 'ㅉ', pron: 'jj', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%89.oga' }
+                { char: 'ㄱ', pron: 'g/k', name: '기역 (giyeok)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Ko-%E3%84%B1.oga' },
+                { char: 'ㄴ', pron: 'n', name: '니은 (nieun)', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Ko-%E3%84%B4.oga' },
+                { char: 'ㄷ', pron: 'd/t', name: '디귿 (digeut)', audio: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Ko-%E3%84%B7.oga' },
+                { char: 'ㄹ', pron: 'r/l', name: '리을 (rieul)', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Ko-%E3%84%B9.oga' },
+                { char: 'ㅁ', pron: 'm', name: '미음 (mieum)', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Ko-%E3%85%81.oga' },
+                { char: 'ㅂ', pron: 'b/p', name: '비읍 (bieup)', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-%E3%85%82.oga' },
+                { char: 'ㅅ', pron: 's', name: '시옷 (siot)', audio: 'https://upload.wikimedia.org/wikipedia/commons/2/2b/Ko-%E3%85%85.oga' },
+                { char: 'ㅇ', pron: 'ng/-', name: '이응 (ieung)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%85%87.oga' },
+                { char: 'ㅈ', pron: 'j', name: '지읒 (jieut)', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Ko-%E3%85%88.oga' },
+                { char: 'ㅊ', pron: 'ch', name: '치읓 (chieut)', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Ko-%E3%85%8A.oga' },
+                { char: 'ㅋ', pron: 'k', name: '키읔 (kieuk)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Ko-%E3%85%8B.oga' },
+                { char: 'ㅌ', pron: 't', name: '티읕 (tieut)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%8C.oga' },
+                { char: 'ㅍ', pron: 'p', name: '피읖 (pieup)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%8D.oga' },
+                { char: 'ㅎ', pron: 'h', name: '히읗 (hieut)', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%8E.oga' },
+                { char: 'ㄲ', pron: 'kk', name: '쌍기역 (ssanggiyeok)', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-%E3%84%B2.oga' },
+                { char: 'ㄸ', pron: 'tt', name: '쌍디귿 (ssangdigeut)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%84%B8.oga' },
+                { char: 'ㅃ', pron: 'pp', name: '쌍비읍 (ssangbieup)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6d/Ko-%E3%85%83.oga' },
+                { char: 'ㅆ', pron: 'ss', name: '쌍시옷 (ssangsiot)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-%E3%85%86.oga' },
+                { char: 'ㅉ', pron: 'jj', name: '쌍지읒 (ssangjieut)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%89.oga' }
             ],
             vowels: [
-                { char: 'ㅏ', pron: 'a', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Ko-%E3%85%8F.oga' },
-                { char: 'ㅑ', pron: 'ya', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Ko-%E3%85%91.oga' },
-                { char: 'ㅓ', pron: 'eo', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Ko-%E3%85%93.oga' },
-                { char: 'ㅕ', pron: 'yeo', audio: 'https://upload.wikimedia.org/wikipedia/commons/2/2e/Ko-%E3%85%95.oga' },
-                { char: 'ㅗ', pron: 'o', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Ko-%E3%85%97.oga' },
-                { char: 'ㅛ', pron: 'yo', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Ko-%E3%85%9B.oga' },
-                { char: 'ㅜ', pron: 'u', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Ko-%E3%85%9C.oga' },
-                { char: 'ㅠ', pron: 'yu', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Ko-%E3%85%A0.oga' },
-                { char: 'ㅡ', pron: 'eu', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Ko-%E3%85%A1.oga' },
-                { char: 'ㅣ', pron: 'i', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-%E3%85%A3.oga' },
-                { char: 'ㅐ', pron: 'ae', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%90.oga' },
-                { char: 'ㅒ', pron: 'yae', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Ko-%E3%85%92.oga' },
-                { char: 'ㅔ', pron: 'e', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Ko-%E3%85%94.oga' },
-                { char: 'ㅖ', pron: 'ye', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%96.oga' },
-                { char: 'ㅘ', pron: 'wa', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-%E3%85%98.oga' },
-                { char: 'ㅙ', pron: 'wae', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5d/Ko-%E3%85%99.oga' },
-                { char: 'ㅚ', pron: 'oe', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%9A.oga' },
-                { char: 'ㅝ', pron: 'wo', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%9D.oga' },
-                { char: 'ㅞ', pron: 'we', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%9E.oga' },
-                { char: 'ㅟ', pron: 'wi', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Ko-%E3%85%9F.oga' },
-                { char: 'ㅢ', pron: 'ui', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%A2.oga' }
+                { char: 'ㅏ', pron: 'a', name: '아 (a)', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Ko-%E3%85%8F.oga' },
+                { char: 'ㅑ', pron: 'ya', name: '야 (ya)', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Ko-%E3%85%91.oga' },
+                { char: 'ㅓ', pron: 'eo', name: '어 (eo)', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Ko-%E3%85%93.oga' },
+                { char: 'ㅕ', pron: 'yeo', name: '여 (yeo)', audio: 'https://upload.wikimedia.org/wikipedia/commons/2/2e/Ko-%E3%85%95.oga' },
+                { char: 'ㅗ', pron: 'o', name: '오 (o)', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Ko-%E3%85%97.oga' },
+                { char: 'ㅛ', pron: 'yo', name: '요 (yo)', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Ko-%E3%85%9B.oga' },
+                { char: 'ㅜ', pron: 'u', name: '우 (u)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Ko-%E3%85%9C.oga' },
+                { char: 'ㅠ', pron: 'yu', name: '유 (yu)', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Ko-%E3%85%A0.oga' },
+                { char: 'ㅡ', pron: 'eu', name: '으 (eu)', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Ko-%E3%85%A1.oga' },
+                { char: 'ㅣ', pron: 'i', name: '이 (i)', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-%E3%85%A3.oga' },
+                { char: 'ㅐ', pron: 'ae', name: '애 (ae)', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%90.oga' },
+                { char: 'ㅒ', pron: 'yae', name: '얘 (yae)', audio: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Ko-%E3%85%92.oga' },
+                { char: 'ㅔ', pron: 'e', name: '에 (e)', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Ko-%E3%85%94.oga' },
+                { char: 'ㅖ', pron: 'ye', name: '예 (ye)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Ko-%E3%85%96.oga' },
+                { char: 'ㅘ', pron: 'wa', name: '와 (wa)', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-%E3%85%98.oga' },
+                { char: 'ㅙ', pron: 'wae', name: '왜 (wae)', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5d/Ko-%E3%85%99.oga' },
+                { char: 'ㅚ', pron: 'oe', name: '외 (oe)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%9A.oga' },
+                { char: 'ㅝ', pron: 'wo', name: '워 (wo)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%9D.oga' },
+                { char: 'ㅞ', pron: 'we', name: '웨 (we)', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-%E3%85%9E.oga' },
+                { char: 'ㅟ', pron: 'wi', name: '위 (wi)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Ko-%E3%85%9F.oga' },
+                { char: 'ㅢ', pron: 'ui', name: '의 (ui)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-%E3%85%A2.oga' }
             ],
             syllables: [
-                { char: '가', pron: 'ga', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Ko-가.oga' },
-                { char: '나', pron: 'na', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Ko-나.oga' },
-                { char: '다', pron: 'da', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Ko-다.oga' },
-                { char: '라', pron: 'ra', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-라.oga' },
-                { char: '마', pron: 'ma', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-마.oga' },
-                { char: '바', pron: 'ba', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Ko-바.oga' },
-                { char: '사', pron: 'sa', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Ko-사.oga' },
-                { char: '아', pron: 'a', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-아.oga' },
-                { char: '자', pron: 'ja', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Ko-자.oga' },
-                { char: '차', pron: 'cha', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Ko-차.oga' },
-                { char: '카', pron: 'ka', audio: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Ko-카.oga' },
-                { char: '타', pron: 'ta', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-타.oga' },
-                { char: '파', pron: 'pa', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-파.oga' },
-                { char: '하', pron: 'ha', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-하.oga' }
+                { char: '가', pron: 'ga', name: '가 (ga)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Ko-가.oga' },
+                { char: '나', pron: 'na', name: '나 (na)', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Ko-나.oga' },
+                { char: '다', pron: 'da', name: '다 (da)', audio: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Ko-다.oga' },
+                { char: '라', pron: 'ra', name: '라 (ra)', audio: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ko-라.oga' },
+                { char: '마', pron: 'ma', name: '마 (ma)', audio: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Ko-마.oga' },
+                { char: '바', pron: 'ba', name: '바 (ba)', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Ko-바.oga' },
+                { char: '사', pron: 'sa', name: '사 (sa)', audio: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Ko-사.oga' },
+                { char: '아', pron: 'a', name: '아 (a)', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Ko-아.oga' },
+                { char: '자', pron: 'ja', name: '자 (ja)', audio: 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Ko-자.oga' },
+                { char: '차', pron: 'cha', name: '차 (cha)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Ko-차.oga' },
+                { char: '카', pron: 'ka', name: '카 (ka)', audio: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Ko-카.oga' },
+                { char: '타', pron: 'ta', name: '타 (ta)', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-타.oga' },
+                { char: '파', pron: 'pa', name: '파 (pa)', audio: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Ko-파.oga' },
+                { char: '하', pron: 'ha', name: '하 (ha)', audio: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ko-하.oga' }
             ]
         };
 
@@ -522,13 +558,29 @@
         let audio = new Audio();
         let currentBatch = [];
         let memorizedCards = JSON.parse(localStorage.getItem('memorizedCards')) || [];
+        let audioEnabled = true;
 
         // Initialize the app
         window.onload = function() {
             renderHangulCharts();
             initializeFlashcards();
             updateProgressStats();
+            
+            // Check if audio is playable
+            testAudio();
         };
+
+        // Test if audio can be played
+        function testAudio() {
+            const testAudio = new Audio();
+            testAudio.src = 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...';
+            testAudio.play().then(() => {
+                audioEnabled = true;
+            }).catch(() => {
+                audioEnabled = false;
+                alert("Audio playback is blocked by your browser. Please enable audio to hear pronunciations.");
+            });
+        }
 
         // Tab navigation
         function openTab(tabName) {
@@ -572,7 +624,8 @@
                         ${isMemorized ? '✓' : '○'}
                     </button>
                     <div class="hangul-char">${item.char}</div>
-                    <div class="pronunciation">${item.pron}</div>
+                    <div class="pronunciation">Sound: ${item.pron}</div>
+                    <div class="char-name">${item.name}</div>
                     <button class="audio-btn" onclick="playAudio('${item.audio}')">Play Sound</button>
                 `;
                 chart.appendChild(card);
@@ -608,7 +661,8 @@
                     card.className = 'hangul-card';
                     card.innerHTML = `
                         <div class="hangul-char">${item.char}</div>
-                        <div class="pronunciation">${item.pron}</div>
+                        <div class="pronunciation">Sound: ${item.pron}</div>
+                        <div class="char-name">${item.name}</div>
                         <button class="audio-btn" onclick="playAudio('${item.audio}')">Play Sound</button>
                     `;
                     chart.appendChild(card);
@@ -618,6 +672,8 @@
 
         // Audio functions
         function playAudio(audioUrl) {
+            if (!audioEnabled) return;
+            
             // Stop any currently playing audio
             audio.pause();
             
@@ -633,7 +689,7 @@
         }
 
         function playCurrentAudio(event) {
-            event.stopPropagation();
+            if (event) event.stopPropagation();
             if (currentCard && currentCard.audio) {
                 playAudio(currentCard.audio);
             }
@@ -650,12 +706,16 @@
             const index = memorizedCards.indexOf(char);
             if (index === -1) {
                 memorizedCards.push(char);
-                button.classList.add('memorized');
-                button.innerHTML = '✓';
+                if (button) {
+                    button.classList.add('memorized');
+                    button.innerHTML = '✓';
+                }
             } else {
                 memorizedCards.splice(index, 1);
-                button.classList.remove('memorized');
-                button.innerHTML = '○';
+                if (button) {
+                    button.classList.remove('memorized');
+                    button.innerHTML = '○';
+                }
             }
             
             // Save to localStorage
@@ -663,6 +723,18 @@
             
             // Update progress stats
             updateProgressStats();
+            
+            // If we're in flashcards and this is the current card, show next
+            if (currentCard && currentCard.char === char && document.getElementById('flashcards').classList.contains('active')) {
+                showNextCard();
+            }
+        }
+
+        function toggleMemorizedFromFlashcard(event) {
+            event.stopPropagation();
+            if (currentCard) {
+                toggleMemorized(currentCard.char);
+            }
         }
 
         // Flashcard functions
@@ -681,6 +753,23 @@
                 ease: 2.5,
                 batch: 0
             }));
+            
+            // Load from localStorage if available
+            const savedCards = localStorage.getItem('cards');
+            if (savedCards) {
+                try {
+                    const parsedCards = JSON.parse(savedCards);
+                    // Merge with current cards to preserve any new characters
+                    cards.forEach(card => {
+                        const savedCard = parsedCards.find(c => c.id === card.id);
+                        if (savedCard) {
+                            Object.assign(card, savedCard);
+                        }
+                    });
+                } catch (e) {
+                    console.error("Failed to load saved cards:", e);
+                }
+            }
             
             totalReviews = cards.length;
             updateProgressStats();
@@ -703,8 +792,10 @@
             // Filter out memorized cards
             availableCards = availableCards.filter(card => !memorizedCards.includes(card.char));
             
-            // Shuffle and take first 5
-            shuffleArray(availableCards);
+            // Prioritize cards that need review soonest
+            availableCards.sort((a, b) => a.nextReview - b.nextReview);
+            
+            // Take first 5
             currentBatch = availableCards.slice(0, 5);
             
             // Update UI
@@ -728,17 +819,39 @@
             // Update UI
             document.getElementById('flashcard').classList.remove('flipped');
             document.getElementById('flashcard-front-char').textContent = currentCard.char;
-            document.getElementById('flashcard-back-char').textContent = currentCard.pron;
+            document.getElementById('flashcard-back-char').textContent = currentCard.char;
+            document.getElementById('flashcard-pronunciation').textContent = `Sound: ${currentCard.pron}`;
+            document.getElementById('flashcard-name').textContent = `Name: ${currentCard.name}`;
             
             updateProgress();
+            
+            // Auto-play audio if enabled
+            if (audioEnabled && currentCard.audio) {
+                setTimeout(() => playCurrentAudio(), 300);
+            }
         }
 
         function flipCard() {
             document.getElementById('flashcard').classList.toggle('flipped');
         }
 
-        function rateCard(rating, event) {
+        function showHint(event) {
             event.stopPropagation();
+            if (!currentCard) return;
+            
+            const hint = `Hint: ${currentCard.pron}`;
+            document.getElementById('flashcard-pronunciation').textContent = hint;
+            
+            // Reset to original after 2 seconds
+            setTimeout(() => {
+                if (document.getElementById('flashcard-pronunciation').textContent === hint) {
+                    document.getElementById('flashcard-pronunciation').textContent = `Sound: ${currentCard.pron}`;
+                }
+            }, 2000);
+        }
+
+        function rateCard(rating, event) {
+            if (event) event.stopPropagation();
             
             if (!currentCard) return;
             
@@ -814,6 +927,7 @@
                 currentPracticeItem = {
                     korean: randomChar.char,
                     pronunciation: randomChar.pron,
+                    name: randomChar.name,
                     audio: randomChar.audio
                 };
                 document.getElementById('practice-display').textContent = randomChar.char;
@@ -838,6 +952,7 @@
             
             if (currentDifficulty === 'basic') {
                 answerText.innerHTML = `
+                    <p><strong>Name:</strong> ${currentPracticeItem.name}</p>
                     <p><strong>Pronunciation:</strong> ${currentPracticeItem.pronunciation}</p>
                 `;
             } else {
